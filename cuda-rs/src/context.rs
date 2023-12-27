@@ -66,6 +66,15 @@ impl CuContext {
     }
 }
 
+impl Clone for CuContext {
+    fn clone(&self) -> Self {
+        Self {
+            ctx: self.ctx,
+            is_owner: false,
+        }
+    }
+}
+
 impl Drop for CuContext {
     fn drop(&mut self) {
         if self.is_owner {
