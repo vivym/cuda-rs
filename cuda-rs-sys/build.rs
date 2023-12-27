@@ -28,6 +28,12 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .clang_arg(format!("-I{}", cuda_include.to_string_lossy()))
         .header(cuda_include.join("cuda.h").to_string_lossy())
+        .blocklist_function("strtold")
+        .blocklist_function("qecvt")
+        .blocklist_function("qfcvt")
+        .blocklist_function("qgcvt")
+        .blocklist_function("qecvt_r")
+        .blocklist_function("qfcvt_r")
         .generate()
         .expect("Unable to generate bindings");
 
