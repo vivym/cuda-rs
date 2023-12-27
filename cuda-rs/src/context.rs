@@ -55,7 +55,7 @@ impl CuContext {
         wrap!((), res)
     }
 
-    pub fn pop(&self) -> CuResult<()> {
+    pub fn pop() -> CuResult<()> {
         let res = unsafe { cuCtxPopCurrent_v2(&mut std::ptr::null_mut()) };
 
         wrap!((), res)
@@ -85,6 +85,6 @@ impl CuContextGuard {
 
 impl Drop for CuContextGuard {
     fn drop(&mut self) {
-        self.0.pop().unwrap();
+        CuContext::pop().unwrap();
     }
 }
