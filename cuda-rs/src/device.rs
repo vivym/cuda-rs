@@ -1,11 +1,11 @@
 use crate::{
-    ffi::cuda::{
+    error::{CuError, CuResult},
+    ffi::{
         CUdevice,
         cuDeviceGet,
         cuDeviceGetCount,
         cuDeviceTotalMem_v2,
     },
-    error::{CuError, CuResult},
 };
 use num_traits::FromPrimitive;
 use std::os::raw::c_int;

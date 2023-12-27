@@ -1,5 +1,7 @@
 use crate::{
-    ffi::cuda::{
+    device::CuDevice,
+    error::{CuError, CuResult},
+    ffi::{
         CUcontext,
         cuCtxCreate_v2,
         cuCtxDestroy_v2,
@@ -8,8 +10,6 @@ use crate::{
         cuCtxPopCurrent_v2,
         cuCtxGetCurrent,
     },
-    device::CuDevice,
-    error::{CuError, CuResult},
 };
 use num_traits::FromPrimitive;
 

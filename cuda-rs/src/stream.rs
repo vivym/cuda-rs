@@ -1,12 +1,12 @@
 use crate::{
-    ffi::cuda::{
+    error::{CuError, CuResult},
+    ffi::{
         CUstream,
         cuStreamCreate,
         cuStreamDestroy_v2,
         cuStreamSynchronize,
         CUstream_flags_enum_CU_STREAM_DEFAULT,
     },
-    error::{CuError, CuResult},
 };
 use num_traits::FromPrimitive;
 

@@ -1,6 +1,4 @@
 use std::env;
-use std::fs::OpenOptions;
-use std::io::Write;
 use std::path::PathBuf;
 
 fn find_dir(env_key: &'static str, candidates: Vec<&'static str>) -> Option<PathBuf> {
@@ -19,43 +17,22 @@ fn find_dir(env_key: &'static str, candidates: Vec<&'static str>) -> Option<Path
     }
 }
 
-fn common_builder() -> bindgen::Builder {
-    bindgen::Builder::default()
-        .raw_line("#![allow(dead_code)]")
-        .raw_line("#![allow(non_camel_case_types)]")
-        .raw_line("#![allow(non_snake_case)]")
-        .raw_line("#![allow(non_upper_case_globals)]")
-}
-
-fn write_builder(builder: bindgen::Builder, output_path: &str) {
-    let s = builder
-        .generate()
-        .expect("Unable to generate bindings")
-        .to_string()
-        .replace("/**", "/*")
-        .replace("/*!", "/*");
-
-    let mut file = OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .create(true)
-        .open(output_path)
-        .unwrap();
-
-    let _ = file.write(s.as_bytes());
-}
-
 fn main() {
     let cuda_include = find_dir(
         "CUDA_INCLUDE_PATH",
         vec!["/opt/cuda/include", "/usr/local/cuda/include"],
     ).expect("Could not find CUDA include path");
 
-    println!("cargo:rustc-link-lib=dylib={}", "cuda");
+    println!("cargo:rustc-link-lib=dylib=cuda");
 
-    let cuda_builder = common_builder()
+    let bindings = bindgen::Builder::default()
         .clang_arg(format!("-I{}", cuda_include.to_string_lossy()))
-        .header(cuda_include.join("cuda.h").to_string_lossy());
+        .header(cuda_include.join("cuda.h").to_string_lossy())
+        .generate()
+        .expect("Unable to generate bindings");
 
-    write_builder(cuda_builder, "src/cuda.rs");
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+    bindings
+        .write_to_file(out_path.join("bindings.rs"))
+        .expect("Couldn't write bindings!");
 }

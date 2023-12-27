@@ -1,5 +1,6 @@
 use crate::{
-    ffi::cuda::{
+    error::{CuError, CuResult},
+    ffi::{
         CUevent,
         cuEventCreate,
         cuEventDestroy_v2,
@@ -9,7 +10,6 @@ use crate::{
         cuEventElapsedTime,
         CUevent_flags_enum_CU_EVENT_DEFAULT,
     },
-    error::{CuError, CuResult},
     stream::CuStream,
 };
 use num_traits::FromPrimitive;

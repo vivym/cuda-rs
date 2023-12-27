@@ -99,7 +99,7 @@ enum_from_primitive! {
         IllegalAddress = 700,
         #[error("This indicates that a launch did not occur because it did not have\n appropriate resources. This error usually indicates that the user has\n attempted to pass too many arguments to the device kernel, or the\n kernel launch specifies too many threads for the kernel's register\n count. Passing arguments of the wrong size (i.e. a 64-bit pointer\n when a 32-bit int is expected) is equivalent to passing too many\n arguments and can also result in this error.")]
         LaunchOutOfResources = 701,
-        #[error("This indicates that the device kernel took too long to execute. This can\n only occur if timeouts are enabled - see the device attribute\n ::CU_DEVICE_ATTRIBUTE_KERNEL_EXEC_TIMEOUT for more information. The\n context cannot be used (and must be destroyed/recreated) until the\n user enables profiling by setting the attribute\n ::CU_CTX_​​FLAGS_​​PROFILE.")]
+        #[error("This indicates that the device kernel took too long to execute. This can\n only occur if timeouts are enabled - see the device attribute\n ::CU_DEVICE_ATTRIBUTE_KERNEL_EXEC_TIMEOUT for more information.\n This leaves the process in an inconsistent state and any further CUDA work\n will return the same error. To continue using CUDA, the process must be terminated\n and relaunched.")]
         LaunchTimeout = 702,
         #[error("This error indicates a kernel launch that uses an incompatible texturing\n mode.")]
         LaunchIncompatibleTexturing = 703,
