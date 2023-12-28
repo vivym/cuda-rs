@@ -1,4 +1,6 @@
+use crate::ffi;
 use thiserror::Error;
+use num_traits::FromPrimitive;
 
 enum_from_primitive! {
     #[derive(Error, Debug, PartialEq)]
@@ -187,6 +189,18 @@ enum_from_primitive! {
         InvalidClusterSize = 912,
         #[error("This indicates that an unknown internal error has occurred.")]
         Unknown = 999,
+    }
+}
+
+impl Into<ffi::CUresult> for CuError {
+    fn into(self) -> ffi::CUresult {
+        self as ffi::CUresult
+    }
+}
+
+impl From<ffi::CUresult> for CuError {
+    fn from(res: ffi::CUresult) -> Self {
+        CuError::from_u64(res as u64).unwrap_or(CuError::Unknown)
     }
 }
 
