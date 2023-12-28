@@ -1,62 +1,82 @@
 use crate::{
     device::CuDevice,
     error::{CuError, CuResult},
-    ffi::{
-        CUcontext,
-        cuCtxCreate_v2,
-        cuCtxDestroy_v2,
-        cuDevicePrimaryCtxRetain,
-        cuCtxPushCurrent_v2,
-        cuCtxPopCurrent_v2,
-        cuCtxGetCurrent,
-    },
+    ffi,
 };
-use num_traits::FromPrimitive;
+use std::sync::Arc;
 
-pub struct CuContext {
-    pub ctx: CUcontext,
-    is_owner: bool,
+struct CUcontext(ffi::CUcontext);
+
+impl Drop for CUcontext {
+    fn drop(&mut self) {
+        unsafe { ffi::cuCtxDestroy_v2(self.0) };
+    }
 }
+
+enum Inner {
+    Owned(Arc<CUcontext>),
+    Borrowed(ffi::CUcontext),
+}
+
+pub struct CuContext(Inner);
 
 impl CuContext {
     pub fn new(device: &CuDevice) -> CuResult<Self> {
-        let mut ctx = CuContext{
-            ctx: std::ptr::null_mut(),
-            is_owner: true,
+        let mut ctx = std::ptr::null_mut();
+        let res = unsafe {
+            ffi::cuCtxCreate_v2(&mut ctx, 0, device.get_raw())
         };
-        let res = unsafe { cuCtxCreate_v2(&mut ctx.ctx, 0, device.0) };
+        let ctx = CuContext(Inner::Owned(Arc::new(CUcontext(ctx))));
 
         wrap!(ctx, res)
     }
 
+    pub unsafe fn from_raw(ctx: ffi::CUcontext) -> Self {
+        CuContext(Inner::Borrowed(ctx))
+    }
+
     pub fn retain_primary_context(device: &CuDevice) -> CuResult<Self> {
-        let mut ctx = CuContext{
-            ctx: std::ptr::null_mut(),
-            is_owner: false,
+        let mut ctx = std::ptr::null_mut();
+        let res = unsafe {
+            ffi::cuDevicePrimaryCtxRetain(&mut ctx, device.get_raw())
         };
-        let res = unsafe { cuDevicePrimaryCtxRetain(&mut ctx.ctx, device.0) };
+        let ctx = CuContext(Inner::Borrowed(ctx));
 
         wrap!(ctx, res)
     }
 
     pub fn current() -> CuResult<Self> {
-        let mut ctx = CuContext{
-            ctx: std::ptr::null_mut(),
-            is_owner: false,
-        };
-        let res = unsafe { cuCtxGetCurrent(&mut ctx.ctx) };
+        let mut ctx = std::ptr::null_mut();
+        let res = unsafe { ffi::cuCtxGetCurrent(&mut ctx) };
+        let ctx = CuContext(Inner::Borrowed(ctx));
 
         wrap!(ctx, res)
     }
 
+    pub unsafe fn get_raw(&self) -> ffi::CUcontext {
+        match self.0 {
+            Inner::Owned(ref ctx) => ctx.0,
+            Inner::Borrowed(ctx) => ctx,
+        }
+    }
+
     pub fn push(&self) -> CuResult<()> {
-        let res = unsafe { cuCtxPushCurrent_v2(self.ctx) };
+        let res = match self.0 {
+            Inner::Owned(ref ctx) => unsafe {
+                ffi::cuCtxPushCurrent_v2(ctx.0)
+            },
+            Inner::Borrowed(ctx) => unsafe {
+                ffi::cuCtxPushCurrent_v2(ctx)
+            },
+        };
 
         wrap!((), res)
     }
 
     pub fn pop() -> CuResult<()> {
-        let res = unsafe { cuCtxPopCurrent_v2(&mut std::ptr::null_mut()) };
+        let res = unsafe {
+            ffi::cuCtxPopCurrent_v2(&mut std::ptr::null_mut())
+        };
 
         wrap!((), res)
     }
@@ -68,17 +88,9 @@ impl CuContext {
 
 impl Clone for CuContext {
     fn clone(&self) -> Self {
-        Self {
-            ctx: self.ctx,
-            is_owner: false,
-        }
-    }
-}
-
-impl Drop for CuContext {
-    fn drop(&mut self) {
-        if self.is_owner {
-            unsafe { cuCtxDestroy_v2(self.ctx) };
+        match self.0 {
+            Inner::Owned(ref ctx) => CuContext(Inner::Owned(ctx.clone())),
+            Inner::Borrowed(ctx) => CuContext(Inner::Borrowed(ctx)),
         }
     }
 }
