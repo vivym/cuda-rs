@@ -11,3 +11,8 @@ pub mod device;
 pub mod error;
 pub mod event;
 pub mod stream;
+
+pub fn init() -> Result<(), error::CuError> {
+    let res = unsafe { ffi::cuInit(0) };
+    wrap!((), res)
+}

@@ -1,6 +1,6 @@
 use crate::{
     device::CuDevice,
-    error::{CuError, CuResult},
+    error::CuResult,
     ffi,
 };
 use std::sync::Arc;

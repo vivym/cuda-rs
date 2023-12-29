@@ -1,6 +1,6 @@
 use crate::{
     context::CuContext,
-    error::{CuError, CuResult},
+    error::CuResult,
     event::CuEvent,
     ffi,
 };

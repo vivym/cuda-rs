@@ -1,5 +1,5 @@
 use crate::{
-    error::{CuError, CuResult},
+    error::CuResult,
     ffi,
     stream::CuStream,
 };
