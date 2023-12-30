@@ -4,6 +4,7 @@ use crate::{
 };
 use std::os::raw::c_int;
 
+#[derive(Copy, Clone)]
 pub struct CuDevice(ffi::CUdevice);
 
 impl CuDevice {

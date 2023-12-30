@@ -61,13 +61,9 @@ impl CuContext {
     }
 
     pub fn push(&self) -> CuResult<()> {
-        let res = match self.0 {
-            Inner::Owned(ref ctx) => unsafe {
-                ffi::cuCtxPushCurrent_v2(ctx.0)
-            },
-            Inner::Borrowed(ctx) => unsafe {
-                ffi::cuCtxPushCurrent_v2(ctx)
-            },
+        let res = unsafe {
+            let ctx = self.get_raw();
+            ffi::cuCtxPushCurrent_v2(ctx)
         };
 
         wrap!((), res)

@@ -37,14 +37,7 @@ impl CuStream {
     }
 
     pub fn synchronize(&self) -> CuResult<()> {
-        let res = match self.0 {
-            Inner::Owned(ref s) => unsafe {
-                ffi::cuStreamSynchronize(s.0)
-            },
-            Inner::Borrowed(s) => unsafe {
-                ffi::cuStreamSynchronize(s)
-            },
-        };
+        let res = unsafe { ffi::cuStreamSynchronize(self.get_raw()) };
 
         wrap!((), res)
     }
@@ -64,14 +57,7 @@ impl CuStream {
     }
 
     pub fn query(&self) -> CuResult<bool> {
-        let res = match self.0 {
-            Inner::Owned(ref s) => unsafe {
-                ffi::cuStreamQuery(s.0)
-            },
-            Inner::Borrowed(s) => unsafe {
-                ffi::cuStreamQuery(s)
-            },
-        };
+        let res = unsafe { ffi::cuStreamQuery(self.get_raw()) };
 
         if res == ffi::cudaError_enum_CUDA_SUCCESS || res == ffi::cudaError_enum_CUDA_ERROR_NOT_READY {
             Ok(res == ffi::cudaError_enum_CUDA_SUCCESS)
@@ -81,13 +67,8 @@ impl CuStream {
     }
 
     pub fn wait_on_event(&self, event: &CuEvent) -> CuResult<()> {
-        let res = match self.0 {
-            Inner::Owned(ref s) => unsafe {
-                ffi::cuStreamWaitEvent(s.0, event.get_raw(), 0)
-            },
-            Inner::Borrowed(s) => unsafe {
-                ffi::cuStreamWaitEvent(s, event.get_raw(), 0)
-            },
+        let res = unsafe {
+            ffi::cuStreamWaitEvent(self.get_raw(), event.get_raw(), 0)
         };
 
         wrap!((), res)
@@ -97,6 +78,15 @@ impl CuStream {
         match self.0 {
             Inner::Owned(ref s) => s.0,
             Inner::Borrowed(s) => s,
+        }
+    }
+}
+
+impl Clone for CuStream {
+    fn clone(&self) -> Self {
+        match self.0 {
+            Inner::Owned(ref s) => CuStream(Inner::Owned(s.clone())),
+            Inner::Borrowed(s) => CuStream(Inner::Borrowed(s)),
         }
     }
 }
