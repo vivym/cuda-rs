@@ -77,6 +77,12 @@ impl CuContext {
         wrap!((), res)
     }
 
+    pub fn synchronize() -> CuResult<()> {
+        let res = unsafe { ffi::cuCtxSynchronize() };
+
+        wrap!((), res)
+    }
+
     pub fn guard(self) -> CuResult<CuContextGuard> {
         CuContextGuard::new(self)
     }

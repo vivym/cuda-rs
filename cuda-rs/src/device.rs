@@ -1,4 +1,5 @@
 use crate::{
+    context::CuContext,
     error::CuResult,
     ffi,
 };
@@ -22,6 +23,10 @@ impl CuDevice {
         let res = unsafe { ffi::cuDeviceGetCount(&mut count as *mut i32) };
 
         wrap!(count, res)
+    }
+
+    pub fn retain_primary_context(&self) -> CuResult<CuContext> {
+        CuContext::retain_primary_context(self)
     }
 
     pub fn total_memory(&self) -> CuResult<usize> {

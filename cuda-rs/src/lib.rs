@@ -10,6 +10,7 @@ pub mod context;
 pub mod device;
 pub mod error;
 pub mod event;
+pub mod memory;
 pub mod stream;
 
 pub fn init() -> Result<(), error::CuError> {
