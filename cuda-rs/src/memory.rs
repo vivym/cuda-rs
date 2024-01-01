@@ -219,12 +219,13 @@ impl PitchedDeviceMemory {
             params.srcMemoryType = ffi::CUmemorytype_enum_CU_MEMORYTYPE_DEVICE;
             params.srcDevice = self.memory.get_raw();
             params.srcPitch = self.pitch;
-            params.dstMemoryType = if is_dst_host {
-                ffi::CUmemorytype_enum_CU_MEMORYTYPE_HOST
+            if is_dst_host {
+                params.dstMemoryType = ffi::CUmemorytype_enum_CU_MEMORYTYPE_HOST;
+                params.dstHost = dst as _;
             } else {
-                ffi::CUmemorytype_enum_CU_MEMORYTYPE_DEVICE
-            };
-            params.dstDevice = dst;
+                params.dstMemoryType = ffi::CUmemorytype_enum_CU_MEMORYTYPE_DEVICE;
+                params.dstDevice = dst;
+            }
             params.dstPitch = pitch;
             params.WidthInBytes = width;
             params.Height = height;
@@ -251,11 +252,13 @@ impl PitchedDeviceMemory {
             let stream = stream
                 .map_or(self.memory.stream.get_raw(), |s| s.get_raw());
             let mut params: ffi::CUDA_MEMCPY2D = std::mem::zeroed();
-            params.srcMemoryType = if is_src_host {
-                ffi::CUmemorytype_enum_CU_MEMORYTYPE_HOST
+            if is_src_host {
+                params.srcMemoryType = ffi::CUmemorytype_enum_CU_MEMORYTYPE_HOST;
+                params.srcHost = src as _;
             } else {
-                ffi::CUmemorytype_enum_CU_MEMORYTYPE_DEVICE
-            };
+                params.srcMemoryType = ffi::CUmemorytype_enum_CU_MEMORYTYPE_DEVICE;
+                params.srcDevice = src;
+            }
             params.srcDevice = src;
             params.srcPitch = pitch;
             params.dstMemoryType = ffi::CUmemorytype_enum_CU_MEMORYTYPE_DEVICE;
