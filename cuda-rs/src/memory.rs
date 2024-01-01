@@ -1,4 +1,4 @@
-use crate::{ffi, stream::CuStream, error::CuResult};
+use crate::{ffi, stream::CuStream, error::{CuResult, CuError}};
 use std::ffi::c_void;
 
 pub struct HostMemory {
@@ -37,6 +37,14 @@ impl HostMemory {
     pub fn copy_to_raw(&self, dst: *mut c_void, size: usize) -> CuResult<()> {
         let res = unsafe {
             ffi::cuMemcpy(dst as _, self.ptr as _, size)
+        };
+
+        wrap!((), res)
+    }
+
+    pub fn copy_from_raw(&self, src: *const c_void, size: usize) -> CuResult<()> {
+        let res = unsafe {
+            ffi::cuMemcpy(self.ptr as _, src as _, size)
         };
 
         wrap!((), res)
@@ -98,6 +106,26 @@ impl DeviceMemory {
             ffi::cuMemcpyAsync(
                 dst,
                 self.ptr,
+                size,
+                stream,
+            )
+        };
+
+        wrap!((), res)
+    }
+
+    pub fn copy_from_raw(
+        &self,
+        src: ffi::CUdeviceptr,
+        size: usize,
+        stream: Option<&CuStream>,
+    ) -> CuResult<()> {
+        let res = unsafe {
+            let stream = stream
+                .map_or(self.stream.get_raw(), |s| s.get_raw());
+            ffi::cuMemcpyAsync(
+                self.ptr,
+                src,
                 size,
                 stream,
             )
@@ -180,7 +208,10 @@ impl PitchedDeviceMemory {
         is_dst_host: bool,
         stream: Option<&CuStream>,
     ) -> CuResult<()> {
-        assert!(width == self.width && height == self.height, "invalid size");
+        if width != self.width || height != self.height {
+            return Err(CuError::InvalidValue);
+        }
+
         let res = unsafe {
             let stream = stream
                 .map_or(self.memory.stream.get_raw(), |s| s.get_raw());
@@ -195,6 +226,41 @@ impl PitchedDeviceMemory {
             };
             params.dstDevice = dst;
             params.dstPitch = pitch;
+            params.WidthInBytes = width;
+            params.Height = height;
+            ffi::cuMemcpy2DAsync_v2(&params, stream)
+        };
+
+        wrap!((), res)
+    }
+
+    pub fn copy_from_raw(
+        &self,
+        src: ffi::CUdeviceptr,
+        pitch: usize,
+        width: usize,
+        height: usize,
+        is_src_host: bool,
+        stream: Option<&CuStream>,
+    ) -> CuResult<()> {
+        if width != self.width || height != self.height {
+            return Err(CuError::InvalidValue);
+        }
+
+        let res = unsafe {
+            let stream = stream
+                .map_or(self.memory.stream.get_raw(), |s| s.get_raw());
+            let mut params: ffi::CUDA_MEMCPY2D = std::mem::zeroed();
+            params.srcMemoryType = if is_src_host {
+                ffi::CUmemorytype_enum_CU_MEMORYTYPE_HOST
+            } else {
+                ffi::CUmemorytype_enum_CU_MEMORYTYPE_DEVICE
+            };
+            params.srcDevice = src;
+            params.srcPitch = pitch;
+            params.dstMemoryType = ffi::CUmemorytype_enum_CU_MEMORYTYPE_DEVICE;
+            params.dstDevice = self.memory.get_raw();
+            params.dstPitch = self.pitch;
             params.WidthInBytes = width;
             params.Height = height;
             ffi::cuMemcpy2DAsync_v2(&params, stream)
@@ -242,6 +308,10 @@ impl PitchedDeviceMemory {
         }?;
 
         Ok(host_mem)
+    }
+
+    pub fn stream(&self) -> &CuStream {
+        &self.memory.stream
     }
 }
 

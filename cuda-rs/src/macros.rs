@@ -4,8 +4,7 @@ macro_rules! wrap {
             Ok($val)
         } else {
             use crate::error::CuError;
-            use num_traits::FromPrimitive;
-            Err(CuError::from_u32($res).unwrap())
+            Err(CuError::from($res))
         }
     )
 }
