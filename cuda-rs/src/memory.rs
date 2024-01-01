@@ -324,11 +324,9 @@ fn align_up(x: usize, align: usize) -> usize {
     let align_mask = align - 1;
     if x & align_mask == 0 {
         x   // already aligned
+    } else if let Some(aligned) = (x | align_mask).checked_add(1) {
+        aligned
     } else {
-        if let Some(aligned) = (x | align_mask).checked_add(1) {
-            aligned
-        } else {
-            panic!("attempt to add with overflow")
-        }
+        panic!("attempt to add with overflow")
     }
 }

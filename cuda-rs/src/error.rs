@@ -192,9 +192,9 @@ enum_from_primitive! {
     }
 }
 
-impl Into<ffi::CUresult> for CuError {
-    fn into(self) -> ffi::CUresult {
-        self as ffi::CUresult
+impl From<CuError> for ffi::CUresult {
+    fn from(err: CuError) -> Self {
+        err as ffi::CUresult
     }
 }
 
